@@ -1,16 +1,11 @@
 package breakout.com;
 
-import org.lwjgl.*;
 import org.lwjgl.glfw.*;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.*;
 
-import breakout.com.Types.*;
-
-
 import java.nio.*;
 
-import static org.lwjgl.glfw.Callbacks.*;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL46.*;
 import static org.lwjgl.system.MemoryStack.*;
@@ -64,7 +59,6 @@ public class Renderer {
     glfwSwapInterval(1);
     glfwShowWindow(window);
 
-
     GL.createCapabilities();
 
     glViewport(0, 0, width, height);
@@ -75,7 +69,7 @@ public class Renderer {
   }
 
   public void beginFrame() {
-    glClearColor(0.4f, 0.4f, 0, 0);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   }
 
@@ -90,6 +84,25 @@ public class Renderer {
 
     int scaleLocation = glGetUniformLocation(shaderProgram, "uScale");
     glUniform2f(scaleLocation, paddle.width, paddle.height);
+
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindVertexArray(0);
+
+    glUseProgram(0);
+  }
+
+  public void render(Types.Ball ball) {
+    glUseProgram(shaderProgram);
+
+    int projectionLocation = glGetUniformLocation(shaderProgram, "uProjection");
+    glUniformMatrix4fv(projectionLocation, false, projectionMatrix);
+
+    int positionLocation = glGetUniformLocation(shaderProgram, "uPosition");
+    glUniform2f(positionLocation, ball.x, ball.y);
+
+    int scaleLocation = glGetUniformLocation(shaderProgram, "uScale");
+    glUniform2f(scaleLocation, ball.radius * 2.f, ball.radius * 2.f);
 
     glBindVertexArray(vao);
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -172,11 +185,32 @@ public class Renderer {
     glBindVertexArray(0);
   }
 
-  private static float[] createOrthoProjection(float left, float right, float bottom, float top) {
+  public void render(Types.Block block) {
+    if (block.destroyed) return;
+
+    glUseProgram(shaderProgram);
+
+    int projectionLocation = glGetUniformLocation(shaderProgram, "uProjection");
+    glUniformMatrix4fv(projectionLocation, false, projectionMatrix);
+
+    int positionLocation = glGetUniformLocation(shaderProgram, "uPosition");
+    glUniform2f(positionLocation, block.x, block.y);
+
+    int scaleLocation = glGetUniformLocation(shaderProgram, "uScale");
+    glUniform2f(scaleLocation, block.width, block.height);
+
+    glBindVertexArray(vao);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+    glBindVertexArray(0);
+
+    glUseProgram(0);
+  }
+
+  private static float[] createOrthoProjection(float left, float right, float top, float bottom) {
     float[] mat = new float[16];
 
     mat[0] = 2.0f / (right - left);
-    mat[5] = 2.0f / (bottom - top);
+    mat[5] = 2.0f / (top - bottom);
     mat[10] = -1.0f;
     mat[12] = -(right + left) / (right - left);
     mat[13] = -(top + bottom) / (top - bottom);
@@ -184,4 +218,5 @@ public class Renderer {
 
     return mat;
   }
+
 }
